@@ -1,0 +1,9 @@
+# extracted dataset (unzipped from heartfailure_dataset.zip by EDA.ipynb)
+data/
+
+# python
+__pycache__/
+*.pyc
+
+# jupyter
+.ipynb_checkpoints/
