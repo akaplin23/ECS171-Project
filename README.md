@@ -3,6 +3,27 @@
 Predicting the presence of heart disease from clinical and exercise-test
 measurements, using a deep feedforward neural network.
 
+## Live demo
+
+A static site in [`docs/`](docs/) — model comparison, the initialization finding,
+and an interactive predictor that runs the trained network **in the browser**:
+
+<https://akaplin23.github.io/ECS171-Project/>
+
+The page loads `docs/model.json` (weights + the fitted preprocessing parameters)
+and reimplements imputation, Box-Cox / Yeo-Johnson and standardization in
+`docs/predict.js`. Verified against PyTorch on all 184 test patients —
+max absolute difference 8.8e-08.
+
+To serve it locally:
+
+```
+python3 -m http.server 8731 --directory docs
+```
+
+> **Enabling the site:** repo Settings → Pages → Source: *Deploy from a branch*,
+> Branch: `main`, folder: `/docs`.
+
 ## Dataset
 
 **Heart Failure Prediction Dataset** — fedesoriano, Kaggle (September 2021).

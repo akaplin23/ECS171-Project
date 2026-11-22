@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Heart Failure Prediction — ECS 171</title>
+<meta name="description" content="Replicating Glorot &amp; Bengio (2010) on a heart failure dataset: Xavier initialization, sigmoid networks, and a live prediction demo.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+  <div class="wrap htop">
+    <div>
+      <h1>Does initialization still matter?</h1>
+      <p class="sub">
+        We retrain deep sigmoid networks on a heart failure dataset to test whether
+        Glorot &amp; Bengio's 2010 finding still holds: that <b>how you initialize the
+        weights</b> decides whether a deep network trains at all.
+      </p>
+      <p class="paper">
+        <b>Paper</b> &middot; Glorot &amp; Bengio (2010), <i>Understanding the difficulty of
+        training deep feedforward neural networks</i> &nbsp;·&nbsp;
+        <b>Data</b> &middot; Heart Failure Prediction, 918 patients, 11 clinical features
+      </p>
+    </div>
+    <button id="theme" type="button">☀ Light</button>
+  </div>
+</header>
+
+<section>
+  <div class="wrap">
+    <h2><span class="n">01</span>Try the model</h2>
+    <p class="lede">
+      The network below runs entirely in your browser — the real trained weights, with the
+      same imputation, Box-Cox and standardization the notebooks used. Move a slider and the
+      prediction updates live.
+    </p>
+
+    <div class="presets">
+      <button data-preset="healthy">Low-risk example</button>
+      <button data-preset="sick">High-risk example</button>
+      <button data-preset="median">Median patient</button>
+    </div>
+
+    <div class="grid">
+      <div class="card readout">
+        <div class="gauge">
+          <div class="pct" id="pct">—</div>
+          <div class="plabel">predicted probability</div>
+        </div>
+        <div class="bar"><i id="fill" style="width:0%"></i></div>
+        <div class="ticks"><span>0</span><span>0.5</span><span>1</span></div>
+        <div class="verdict" id="verdict">—</div>
+        <div class="thr">
+          <div><span>at threshold 0.50</span><b id="t50">—</b></div>
+          <div><span>at threshold 0.36 <span class="u">(recall-tuned)</span></span><b id="t36">—</b></div>
+        </div>
+        <p class="note">
+          4 hidden layers × 32 sigmoid units, Xavier init, Adam. Test AUC 0.932.
+          A research demo on 918 patients — not a medical device.
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="ctrls" id="ctrls"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2><span class="n">02</span>The finding</h2>
+    <p class="lede">
+      With the <b>old</b> initialization scheme, sigmoid networks stop training once they get
+      deep — exactly what the paper predicts. Three of the six SGD runs collapsed into
+      predicting one class for every patient.
+    </p>
+    <div class="two">
+      <div class="card">
+        <svg id="depthChart" viewBox="0 0 440 260"></svg>
+        <p class="cap">
+          Test AUC by depth, standard initialization (eq. 1). Crosses mark runs that
+          collapsed — recall of exactly 0.000 or 1.000, i.e. one class for everyone.
+        </p>
+      </div>
+      <div class="card">
+        <svg id="xavChart" viewBox="0 0 440 260"></svg>
+        <p class="cap">
+          Xavier initialization (eq. 16) with Adam, mean of 3 seeds. Flat across every depth —
+          nothing collapses. The total spread is 0.0025 AUC, about twice the seed-to-seed noise.
+        </p>
+      </div>
+    </div>
+    <div class="callout">
+      <b>What this means.</b> Xavier did not produce a higher score — on this dataset nothing does,
+      because 16 clinical features are close to linearly separable and logistic regression already
+      reaches AUC 0.939. What Xavier bought was <b>trainability</b>: it worked at every depth we
+      tried, while the old scheme failed outright past three layers. That is the paper's claim,
+      reproduced.
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2><span class="n">03</span>Model comparison</h2>
+    <p class="lede">
+      Every model reads the same train / validation / test split, and every accuracy and recall
+      below is measured at the <b>same 0.50 threshold</b>, so the columns are comparable. AUC is
+      threshold-free. The last row is the six-layer SGD network that collapsed — it is shown
+      because an AUC of 0.63 next to a recall of 1.000 is what a failed run looks like.
+    </p>
+    <div class="two">
+      <div class="card">
+        <table id="cmp"><thead><tr>
+          <th>Model</th><th>AUC</th><th>Accuracy</th><th>Recall</th><th>Missed</th>
+        </tr></thead><tbody></tbody></table>
+        <p class="cap">
+          “Missed” counts sick patients predicted healthy, out of 102. One standard error on
+          accuracy at n=184 is ±2.6 points, so every model except the collapsed one is
+          statistically tied — including logistic regression.
+        </p>
+      </div>
+      <div class="card">
+        <svg id="rocChart" viewBox="0 0 440 330"></svg>
+        <p class="cap">ROC curves on the 184 held-out test patients.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2><span class="n">04</span>Data and method</h2>
+    <div class="stats" id="stats"></div>
+    <div class="two">
+      <div class="card">
+        <h3 style="font-size:14.5px;margin-bottom:10px">Preprocessing</h3>
+        <p style="font-size:13.5px;color:var(--tx2)">
+          172 patients have <code>Cholesterol = 0</code>, which is not a measurement but a missing
+          value — and <b>88% of them are sick</b>, versus 48% of patients with a real reading. So we
+          flag missingness as its own feature before imputing with the training median, otherwise the
+          model learns that 237 mg/dl means heart disease. Skewed features get Box-Cox
+          (Yeo-Johnson for Oldpeak, which goes negative), then standardization — which is what makes
+          Glorot's equal-variance assumption hold in the first place.
+        </p>
+      </div>
+      <div class="card">
+        <h3 style="font-size:14.5px;margin-bottom:10px">Selection</h3>
+        <p style="font-size:13.5px;color:var(--tx2)">
+          Every choice was made on validation, never on test. Within a run, the best-validation-AUC
+          epoch is checkpointed and early stopping ends it after 30 stale epochs. Across runs, a grid
+          of 5 depths × 4 learning rates × 3 seeds — 60 runs — picked depth 4 at lr 3e-4. The decision
+          threshold was scanned on validation afterwards. The 184 test rows were read once, at the end.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    ECS 171 group project &middot;
+    <a href="https://github.com/akaplin23/ECS171-Project">source on GitHub</a> &middot;
+    model and preprocessing run client-side; no data leaves your browser.
+  </div>
+</footer>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
