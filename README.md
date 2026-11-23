@@ -3,26 +3,28 @@
 Predicting the presence of heart disease from clinical and exercise-test
 measurements, using a deep feedforward neural network.
 
-## Live demo
+### ▶ [Live demo — akaplin23.github.io/ECS171-Project](https://akaplin23.github.io/ECS171-Project/)
 
-A static site in [`docs/`](docs/) — model comparison, the initialization finding,
-and an interactive predictor that runs the trained network **in the browser**:
+Interactive predictor, model comparison and the initialization finding.
+The trained network runs in your browser; no data leaves the page.
 
-<https://akaplin23.github.io/ECS171-Project/>
+## How the demo works
 
-The page loads `docs/model.json` (weights + the fitted preprocessing parameters)
-and reimplements imputation, Box-Cox / Yeo-Johnson and standardization in
-`docs/predict.js`. Verified against PyTorch on all 184 test patients —
-max absolute difference 8.8e-08.
+The site is static — it lives in [`docs/`](docs/) and is served by GitHub Pages
+from `main`, with no backend. Prediction happens client-side: `docs/model.json`
+carries the trained weights together with the preprocessing parameters fitted on
+the training split (the two medians, four Box-Cox lambdas, the Yeo-Johnson lambda
+and the scaler statistics), and `docs/predict.js` reimplements imputation,
+Box-Cox / Yeo-Johnson, standardization and the forward pass in plain JavaScript.
 
-To serve it locally:
+Checked against PyTorch on all 184 test patients: the largest difference in
+predicted probability is 8.8e-08.
+
+To run it locally:
 
 ```
 python3 -m http.server 8731 --directory docs
 ```
-
-> **Enabling the site:** repo Settings → Pages → Source: *Deploy from a branch*,
-> Branch: `main`, folder: `/docs`.
 
 ## Dataset
 
